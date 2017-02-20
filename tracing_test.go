@@ -106,8 +106,8 @@ func TestSpanTags(t *testing.T) {
 
 func TestDDParams(t *testing.T) {
 	span := NewTracer().StartSpan("test",
-		opentracing.Tag{ServiceKeyTag, "/bin/laden"},
-		opentracing.Tag{ResourceKeyTag, "/user/{id}"},
+		opentracing.Tag{ServiceTagKey, "/bin/laden"},
+		opentracing.Tag{ResourceTagKey, "/user/{id}"},
 		opentracing.Tag{"user_agent", "firefox"},
 	).(*Span)
 

@@ -27,8 +27,10 @@ var (
 )
 
 var (
-	ServiceKeyTag  = "service"
-	ResourceKeyTag = "resource"
+	// ServiceTagKey is use to indicate which tag is going to be used to set the service name
+	ServiceTagKey = "service"
+	// ResourceTagKey is use to indicate which tag is going to be used to set the resource
+	ResourceTagKey = "resource"
 )
 
 type Tracer struct {
@@ -138,9 +140,9 @@ func (s *Span) SetOperationName(operationName string) opentracing.Span {
 func (s *Span) setMeta(key string, value interface{}) opentracing.Span {
 	val := fmt.Sprint(value)
 	switch key {
-	case ServiceKeyTag:
+	case ServiceTagKey:
 		s.Service = val
-	case ResourceKeyTag:
+	case ResourceTagKey:
 		s.Resource = val
 	default:
 		s.SetMeta(key, val)
