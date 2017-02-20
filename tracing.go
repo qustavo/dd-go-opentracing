@@ -3,26 +3,38 @@ package ddtracer
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/DataDog/dd-trace-go/tracer"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 type Tracer struct {
 	*tracer.Tracer
-	srv string
+	textPropagator *textMapPropagator
+	srv            string
 }
 
 func NewTracer() opentracing.Tracer {
-	return &Tracer{
+	t := &Tracer{
 		Tracer: tracer.NewTracer(),
+		srv:    "",
 	}
+	t.textPropagator = &textMapPropagator{t}
+
+	return t
 }
 
 func NewTracerTransport(tr tracer.Transport) opentracing.Tracer {
 	return &Tracer{
 		Tracer: tracer.NewTracerTransport(tr),
+		srv:    "test",
 	}
 }
 
@@ -46,7 +58,7 @@ func (t *Tracer) startSpanWithOptions(op string, opts *opentracing.StartSpanOpti
 	}
 
 	if span == nil {
-		span = t.NewRootSpan(op, t.srv, "")
+		span = t.NewRootSpan(op, t.srv, "/")
 	}
 
 	return &Span{span}
@@ -54,11 +66,30 @@ func (t *Tracer) startSpanWithOptions(op string, opts *opentracing.StartSpanOpti
 }
 
 func (t *Tracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
-	panic("not implemented")
+	sc, ok := sm.(*SpanContext)
+	if !ok {
+		return opentracing.ErrInvalidSpanContext
+	}
+
+	span, ok := tracer.SpanFromContext(sc.ctx)
+	if !ok {
+		return opentracing.ErrInvalidSpanContext
+	}
+
+	switch format {
+	case opentracing.HTTPHeaders:
+		return t.textPropagator.Inject(span, carrier)
+	}
+
+	return opentracing.ErrUnsupportedFormat
 }
 
 func (t *Tracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
-	panic("not implemented")
+	switch format {
+	case opentracing.HTTPHeaders:
+		return t.textPropagator.Extract(carrier)
+	}
+	return nil, opentracing.ErrUnsupportedFormat
 }
 
 type Span struct {
