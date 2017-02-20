@@ -41,9 +41,14 @@ func NewTracer() opentracing.Tracer {
 }
 
 func NewTracerTransport(tr tracer.Transport) opentracing.Tracer {
-	t := &Tracer{
-		Tracer: tracer.NewTracerTransport(tr),
+	var driver *tracer.Tracer
+	if tr == nil {
+		driver = tracer.NewTracer()
+	} else {
+		driver = tracer.NewTracerTransport(tr)
 	}
+
+	t := &Tracer{Tracer: driver}
 	t.textPropagator = &textMapPropagator{t}
 
 	return t
