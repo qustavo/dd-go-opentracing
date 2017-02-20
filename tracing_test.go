@@ -33,7 +33,6 @@ func newEnv() *env {
 		//		tracer.NewTransport("localhost", "8000"),
 		tracer.NewTransport(hostPort[0], hostPort[1]),
 	)
-	log.Printf("url.Host = %+v\n", url.Host)
 	return e
 }
 
@@ -103,6 +102,18 @@ func TestSpanTags(t *testing.T) {
 	assert.Equal(t, "val", span.(*Span).GetMeta("key"))
 	assert.Equal(t, "123", span.(*Span).GetMeta("int"))
 	assert.Equal(t, 0.1, span.(*Span).Metrics["metric"])
+}
+
+func TestDDParams(t *testing.T) {
+	span := NewTracer().StartSpan("test",
+		opentracing.Tag{ServiceKeyTag, "/bin/laden"},
+		opentracing.Tag{ResourceKeyTag, "/user/{id}"},
+		opentracing.Tag{"user_agent", "firefox"},
+	).(*Span)
+
+	assert.Equal(t, "/bin/laden", span.Service)
+	assert.Equal(t, "/user/{id}", span.Resource)
+	assert.Equal(t, "firefox", span.GetMeta("user_agent"))
 }
 
 func TestSpanSetOperationName(t *testing.T) {

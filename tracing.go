@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/DataDog/dd-trace-go/tracer"
@@ -15,27 +16,37 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func defaultHostname() string {
+	host, _ := os.Hostname()
+	return host
+}
+
+var (
+	DefaultService  = defaultHostname()
+	DefaultResource = "/"
+)
+
+var (
+	ServiceKeyTag  = "service"
+	ResourceKeyTag = "resource"
+)
+
 type Tracer struct {
 	*tracer.Tracer
 	textPropagator *textMapPropagator
-	srv            string
 }
 
 func NewTracer() opentracing.Tracer {
+	return NewTracerTransport(nil)
+}
+
+func NewTracerTransport(tr tracer.Transport) opentracing.Tracer {
 	t := &Tracer{
-		Tracer: tracer.NewTracer(),
-		srv:    "",
+		Tracer: tracer.NewTracerTransport(tr),
 	}
 	t.textPropagator = &textMapPropagator{t}
 
 	return t
-}
-
-func NewTracerTransport(tr tracer.Transport) opentracing.Tracer {
-	return &Tracer{
-		Tracer: tracer.NewTracerTransport(tr),
-		srv:    "test",
-	}
 }
 
 func (t *Tracer) StartSpan(op string, opts ...opentracing.StartSpanOption) opentracing.Span {
@@ -58,10 +69,15 @@ func (t *Tracer) startSpanWithOptions(op string, opts *opentracing.StartSpanOpti
 	}
 
 	if span == nil {
-		span = t.NewRootSpan(op, t.srv, "/")
+		span = t.NewRootSpan(op, DefaultService, DefaultResource)
 	}
 
-	return &Span{span}
+	s := &Span{span}
+	for key, value := range opts.Tags {
+		s.SetTag(key, value)
+	}
+
+	return s
 
 }
 
@@ -114,19 +130,34 @@ func (s *Span) SetOperationName(operationName string) opentracing.Span {
 	return s
 }
 
+func (s *Span) setMeta(key string, value interface{}) opentracing.Span {
+	val := fmt.Sprint(value)
+	switch key {
+	case ServiceKeyTag:
+		s.Service = val
+	case ResourceKeyTag:
+		s.Resource = val
+	default:
+		s.SetMeta(key, val)
+	}
+
+	return s
+}
+
 func (s *Span) SetTag(key string, value interface{}) opentracing.Span {
-	panic("not implemented")
+	switch t := value.(type) {
+	case float64:
+		s.SetMetric(key, t)
+	default:
+		s.setMeta(key, fmt.Sprint(value))
+	}
+
+	return s
 }
 
 func (s *Span) LogFields(fields ...log.Field) {
 	for _, field := range fields {
-		value := field.Value()
-		switch t := value.(type) {
-		case float64:
-			s.SetMetric(field.Key(), t)
-		default:
-			s.SetMeta(field.Key(), fmt.Sprint(value))
-		}
+		s.SetTag(field.Key(), field.Value())
 	}
 }
 
