@@ -1,3 +1,5 @@
+// Package ddtracer is a DataDog's tracer (https://github.com/DataDog/dd-trace-go) wrapper for the OpenTracing API.
+// As this is an OpenAPI wrapper, please refer to the official documentation.
 package ddtracer
 
 import (
@@ -38,10 +40,12 @@ type Tracer struct {
 	textPropagator *textMapPropagator
 }
 
+// NewTracer creates a new Tracer.
 func NewTracer() opentracing.Tracer {
 	return NewTracerTransport(nil)
 }
 
+// NewTracerTransport create a new Tracer with the given transport.
 func NewTracerTransport(tr tracer.Transport) opentracing.Tracer {
 	var driver *tracer.Tracer
 	if tr == nil {
@@ -123,6 +127,7 @@ func (s *Span) Finish() {
 	s.Span.Finish()
 }
 
+// FinishWithOptions hasn't been implemented
 func (s *Span) FinishWithOptions(opts opentracing.FinishOptions) {
 	panic("not implemented")
 }
@@ -176,10 +181,12 @@ func (s *Span) LogKV(alternatingKeyValues ...interface{}) {
 	s.LogFields(fields...)
 }
 
+// SetBaggageItem  hasn't been implemented
 func (s *Span) SetBaggageItem(restrictedKey string, value string) opentracing.Span {
 	panic("not implemented")
 }
 
+// BaggageItem hasn't been implemented
 func (s *Span) BaggageItem(restrictedKey string) string {
 	panic("not implemented")
 }
@@ -188,14 +195,17 @@ func (s *Span) Tracer() opentracing.Tracer {
 	return s.Tracer()
 }
 
+// LogEvent hasn't been implemented
 func (s *Span) LogEvent(event string) {
 	panic("not implemented")
 }
 
+// LogEventWithPayload hasn't been implemented
 func (s *Span) LogEventWithPayload(event string, payload interface{}) {
 	panic("not implemented")
 }
 
+// Log hasn't been implemented
 func (s *Span) Log(data opentracing.LogData) {
 	panic("not implemented")
 }
@@ -204,6 +214,7 @@ type SpanContext struct {
 	ctx context.Context
 }
 
+// ForeachBaggageItem hasn't been implemented
 func (ctx *SpanContext) ForeachBaggageItem(handler func(k, v string) bool) {
 	panic("not implemented")
 }
