@@ -12,22 +12,29 @@ import (
 
 func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentracing.Span {
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-	child := tr.StartSpan("child", opentracing.ChildOf(parent.Context()))
+	span := tr.StartSpan("child",
+		opentracing.ChildOf(parent.Context()),
+		opentracing.Tag{ServiceTagKey, "gochild"},
+	)
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-	return child
+	return span
 }
 
 func TestIntegration(t *testing.T) {
 	tr := NewTracer()
 	tr.(*Tracer).DebugLoggingEnabled = true
 
-	parent := tr.StartSpan("parent")
+	parent := tr.StartSpan("parent",
+		opentracing.Tag{ServiceTagKey, "gotest"},
+		opentracing.Tag{ResourceTagKey, "/user/{id}"},
+	)
 	parent.LogKV("foo", "bar", "ping", 0.546)
-	time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 
 	spanChild(tr, parent, "child1").Finish()
-	spanChild(tr, parent, "child2").Finish()
+	child := spanChild(tr, parent, "child2")
 	parent.Finish()
+	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
+	child.Finish()
 
 	select {}
 
