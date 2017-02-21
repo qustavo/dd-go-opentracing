@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DataDog/dd-trace-go/tracer"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -121,4 +122,28 @@ func TestSpanSetOperationName(t *testing.T) {
 		StartSpan("test").
 		SetOperationName("op")
 	assert.Equal(t, "op", span.(*Span).Name)
+}
+
+func TestSpanFinishWithOptions(t *testing.T) {
+	span := NewTracer().StartSpan("test")
+	span.FinishWithOptions(opentracing.FinishOptions{
+		FinishTime: time.Now().Add(1 * time.Second),
+	})
+
+	dur := time.Duration(span.(*Span).Duration)
+	assert.True(t, dur > 1*time.Second)
+
+	t.Run("When time.IsZero", func(t *testing.T) {
+		begin := time.Now()
+
+		span := NewTracer().StartSpan("test")
+		span.FinishWithOptions(opentracing.FinishOptions{
+			FinishTime: time.Time{},
+		})
+
+		dur := time.Duration(span.(*Span).Duration)
+		diff := time.Now().Sub(begin)
+		assert.NotZero(t, dur)
+		assert.True(t, dur < diff)
+	})
 }

@@ -124,12 +124,14 @@ type Span struct {
 }
 
 func (s *Span) Finish() {
-	s.Span.Finish()
+	s.FinishWithOptions(opentracing.FinishOptions{})
 }
 
-// FinishWithOptions hasn't been implemented
 func (s *Span) FinishWithOptions(opts opentracing.FinishOptions) {
-	panic("not implemented")
+	if !opts.FinishTime.IsZero() {
+		s.Duration = opts.FinishTime.UTC().UnixNano() - s.Start
+	}
+	s.Span.Finish()
 }
 
 func (s *Span) Context() opentracing.SpanContext {
