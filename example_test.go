@@ -1,10 +1,8 @@
-//+build integration
-
 package ddtracer
 
 import (
+	"log"
 	"math/rand"
-	"testing"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -20,7 +18,7 @@ func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentr
 	return span
 }
 
-func TestIntegration(t *testing.T) {
+func ExampleTracer_StartSpan() {
 	tr := NewTracer()
 	tr.(*Tracer).DebugLoggingEnabled = true
 
@@ -36,6 +34,7 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
 	child.Finish()
 
-	select {}
-
+	if err := tr.(*Tracer).FlushTraces(); err != nil {
+		log.Fatalln(err)
+	}
 }
