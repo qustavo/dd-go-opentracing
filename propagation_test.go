@@ -54,4 +54,13 @@ func TestPropagationExtract(t *testing.T) {
 	assert.Equal(t, uint64(0xbb), span.TraceID)
 	assert.Equal(t, uint64(0xcc), span.ParentID)
 
+	t.Run("CorruptedContext", func(t *testing.T) {
+		for _, key := range []string{"Spanid", "Parentid", "Traceid"} {
+			_, err := tr.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(http.Header{
+				"Dd-Trace-" + key: []string{"NaN"},
+			}))
+			assert.Equal(t, opentracing.ErrSpanContextCorrupted, err)
+		}
+	})
+
 }
