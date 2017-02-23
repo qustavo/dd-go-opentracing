@@ -5,6 +5,7 @@ package ddtracer
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 	"math/rand"
 	"os"
 	"time"
@@ -183,6 +184,18 @@ func (s *Span) LogKV(alternatingKeyValues ...interface{}) {
 	s.LogFields(fields...)
 }
 
+func (s *Span) LogEvent(event string) {
+	stdlog.Println("Span.LogEvent() has been deprecated, use LogFields or LogKV")
+}
+
+func (s *Span) LogEventWithPayload(event string, payload interface{}) {
+	stdlog.Println("Span.LogWithPayload() has been deprecated, use LogFields or LogKV")
+}
+
+func (s *Span) Log(data opentracing.LogData) {
+	stdlog.Println("Span.Log() has been deprecated, use LogFields or LogKV")
+}
+
 // SetBaggageItem  hasn't been implemented
 func (s *Span) SetBaggageItem(restrictedKey string, value string) opentracing.Span {
 	panic("not implemented")
@@ -195,21 +208,6 @@ func (s *Span) BaggageItem(restrictedKey string) string {
 
 func (s *Span) Tracer() opentracing.Tracer {
 	return s.Tracer()
-}
-
-// LogEvent hasn't been implemented
-func (s *Span) LogEvent(event string) {
-	panic("not implemented")
-}
-
-// LogEventWithPayload hasn't been implemented
-func (s *Span) LogEventWithPayload(event string, payload interface{}) {
-	panic("not implemented")
-}
-
-// Log hasn't been implemented
-func (s *Span) Log(data opentracing.LogData) {
-	panic("not implemented")
 }
 
 type SpanContext struct {
