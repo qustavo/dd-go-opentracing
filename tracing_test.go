@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -16,18 +16,20 @@ import (
 	"github.com/DataDog/dd-trace-go/tracer"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type env struct {
+	t    *testing.T
 	reqs []*http.Request
 	ts   *httptest.Server
 	tr   opentracing.Tracer
 }
 
-func newEnv() *env {
-	e := &env{}
+func newEnv(t *testing.T) *env {
+	e := &env{t: t}
 	e.ts = httptest.NewServer(e)
 	url, _ := url.Parse(e.ts.URL)
 	hostPort := strings.Split(url.Host, ":")
@@ -46,12 +48,12 @@ func (e *env) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	buf, err := httputil.DumpRequest(req, true)
 	if err != nil {
-		log.Fatalln(err)
+		e.t.Fatal(err)
 	}
 
 	newReq, err := http.ReadRequest(bufio.NewReader(bytes.NewBuffer(buf)))
 	if err != nil {
-		log.Fatalln(err)
+		e.t.Fatal(err)
 	}
 
 	e.reqs = append(e.reqs, newReq)
@@ -67,7 +69,7 @@ func (e *env) close() {
 }
 
 func TestSpansParenthood(t *testing.T) {
-	env := newEnv()
+	env := newEnv(t)
 	defer env.close()
 
 	pSpan := env.tr.StartSpan("parent")
@@ -107,16 +109,22 @@ func TestSpanTags(t *testing.T) {
 }
 
 func TestDDParams(t *testing.T) {
-	span := NewTracer().StartSpan("test",
-		opentracing.Tag{"user_agent", "firefox"},
-	).(*Span)
+	span := NewTracer().StartSpan("test").(*Span)
 
 	ext.PeerService.Set(span, "/bin/laden")
 	ext.Component.Set(span, "/user/{id}")
 
 	assert.Equal(t, "/bin/laden", span.Service)
 	assert.Equal(t, "/user/{id}", span.Resource)
-	assert.Equal(t, "firefox", span.GetMeta("user_agent"))
+}
+
+func TestSpanErrors(t *testing.T) {
+	span := NewTracer().StartSpan("test").(*Span)
+	span.LogFields(
+		log.Error(errors.New("boom")),
+	)
+
+	assert.Equal(t, int32(1), span.Error)
 }
 
 func TestSpanSetOperationName(t *testing.T) {

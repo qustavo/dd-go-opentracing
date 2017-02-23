@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"math/rand"
 	"time"
 
 	dd "github.com/gchaincl/dd-go-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	otext "github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 func spanChild(tr opentracing.Tracer, parent opentracing.Span, service, op string) opentracing.Span {
@@ -38,6 +40,9 @@ func main() {
 		async := spanChild(tr, parent, "queue", "async.job")
 		parent.Finish()
 		time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
+		async.LogFields(
+			log.Error(errors.New("boom")),
+		)
 		async.Finish()
 	}
 }

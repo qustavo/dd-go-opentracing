@@ -28,7 +28,10 @@ func defaultHostname() string {
 var (
 	DefaultService  = defaultHostname()
 	DefaultResource = "/"
-	EnvTag          = stringTagName("env")
+
+	// EnvTag set's the environment for a given span
+	// i.e EnvTag.Set(span, "development")
+	EnvTag = stringTagName("env")
 )
 
 type Tracer struct {
@@ -140,7 +143,7 @@ func (s *Span) SetOperationName(operationName string) opentracing.Span {
 	return s
 }
 
-func (s *Span) setMeta(key string, value interface{}) opentracing.Span {
+func (s *Span) setTag(key string, value interface{}) opentracing.Span {
 	val := fmt.Sprint(value)
 	switch key {
 	case string(ext.PeerService):
@@ -159,7 +162,7 @@ func (s *Span) SetTag(key string, value interface{}) opentracing.Span {
 	case float64:
 		s.SetMetric(key, t)
 	default:
-		s.setMeta(key, value)
+		s.setTag(key, value)
 	}
 
 	return s
@@ -167,7 +170,12 @@ func (s *Span) SetTag(key string, value interface{}) opentracing.Span {
 
 func (s *Span) LogFields(fields ...log.Field) {
 	for _, field := range fields {
-		s.SetTag(field.Key(), field.Value())
+		switch field.Key() {
+		case "error":
+			s.SetError(field.Value().(error))
+		default:
+			s.SetTag(field.Key(), field.Value())
+		}
 	}
 }
 
