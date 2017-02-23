@@ -1,7 +1,7 @@
 package ddtracer
 
 import (
-	"log"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -18,23 +18,41 @@ func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentr
 	return span
 }
 
+func ExampleNewTracer() {
+	t := NewTracer()
+
+	// To access DataDog tracer's you will need to type cast
+
+	// Let's enable Debug Log
+	t.(*Tracer).DebugLoggingEnabled = true
+	// And flush all the remaining traces
+	t.(*Tracer).FlushTraces()
+}
+
 func ExampleTracer_StartSpan() {
-	tr := NewTracer()
-	tr.(*Tracer).DebugLoggingEnabled = true
+	span := NewTracer().StartSpan("span")
 
-	parent := tr.StartSpan("parent",
-		opentracing.Tag{ServiceTagKey, "gotest"},
-		opentracing.Tag{ResourceTagKey, "/user/{id}"},
+	// Let set DataDog's specific attrs Service and Resource
+	span.LogKV(
+		ServiceTagKey, "gotest",
+		ResourceTagKey, "/user/{id}",
 	)
-	parent.LogKV("foo", "bar", "ping", 0.546)
 
-	spanChild(tr, parent, "child1").Finish()
-	child := spanChild(tr, parent, "child2")
-	parent.Finish()
-	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
-	child.Finish()
+	// To Set metrics, we need to pass a float64 value type
+	span.LogKV("elapsed", 0.1234)
 
-	if err := tr.(*Tracer).FlushTraces(); err != nil {
-		log.Fatalln(err)
-	}
+	// Everything else, is going to be treated as Meta
+	span.LogKV("query", "SELECT data FROM dogs")
+
+	span.Finish()
+	ddspan := span.(*Span)
+	fmt.Println("service  =", ddspan.Service)
+	fmt.Println("resource =", ddspan.Resource)
+	fmt.Println("elapsed  =", ddspan.Metrics["elapsed"])
+	fmt.Println("query    =", ddspan.GetMeta("query"))
+	// Output:
+	// service  = gotest
+	// resource = /user/{id}
+	// elapsed  = 0.1234
+	// query    = SELECT data FROM dogs
 }
