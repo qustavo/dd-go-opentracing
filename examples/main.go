@@ -1,20 +1,18 @@
 package main
 
 import (
-	"log"
 	"math/rand"
 	"time"
 
 	dd "github.com/gchaincl/dd-go-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
+	otext "github.com/opentracing/opentracing-go/ext"
 )
 
-func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentracing.Span {
+func spanChild(tr opentracing.Tracer, parent opentracing.Span, service, op string) opentracing.Span {
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-	span := tr.StartSpan("child",
-		opentracing.ChildOf(parent.Context()),
-		opentracing.Tag{dd.ServiceTagKey, "gochild"},
-	)
+	span := tr.StartSpan(op, opentracing.ChildOf(parent.Context()))
+	otext.PeerService.Set(span, service)
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	return span
 }
@@ -23,19 +21,23 @@ func main() {
 	tr := dd.NewTracer()
 	tr.(*dd.Tracer).DebugLoggingEnabled = true
 
-	parent := tr.StartSpan("parent",
-		opentracing.Tag{dd.ServiceTagKey, "gotest"},
-		opentracing.Tag{dd.ResourceTagKey, "/user/{id}"},
-	)
-	parent.LogKV("foo", "bar", "ping", 0.546)
+	for {
+		// Start the parent Span
+		parent := tr.StartSpan("pylons.request",
+			opentracing.Tag{"foo", "bar"},
+			opentracing.Tag{"ping", 0.546},
+		)
+		// Set Service name and Resource
+		otext.PeerService.Set(parent, "pylons")
+		otext.Component.Set(parent, "/users/{id}")
 
-	spanChild(tr, parent, "child1").Finish()
-	child := spanChild(tr, parent, "child2")
-	parent.Finish()
-	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
-	child.Finish()
+		// Set env
+		dd.EnvTag.Set(parent, "test")
 
-	if err := tr.(*dd.Tracer).FlushTraces(); err != nil {
-		log.Fatalln(err)
+		spanChild(tr, parent, "redis", "redis.command").Finish()
+		async := spanChild(tr, parent, "queue", "async.job")
+		parent.Finish()
+		time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
+		async.Finish()
 	}
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/DataDog/dd-trace-go/tracer"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 )
 
@@ -27,13 +28,7 @@ func defaultHostname() string {
 var (
 	DefaultService  = defaultHostname()
 	DefaultResource = "/"
-)
-
-var (
-	// ServiceTagKey is use to indicate which tag is going to be used to set the service name
-	ServiceTagKey = "service"
-	// ResourceTagKey is use to indicate which tag is going to be used to set the resource
-	ResourceTagKey = "resource"
+	EnvTag          = stringTagName("env")
 )
 
 type Tracer struct {
@@ -148,9 +143,9 @@ func (s *Span) SetOperationName(operationName string) opentracing.Span {
 func (s *Span) setMeta(key string, value interface{}) opentracing.Span {
 	val := fmt.Sprint(value)
 	switch key {
-	case ServiceTagKey:
+	case string(ext.PeerService):
 		s.Service = val
-	case ResourceTagKey:
+	case string(ext.Component):
 		s.Resource = val
 	default:
 		s.SetMeta(key, val)
@@ -164,7 +159,7 @@ func (s *Span) SetTag(key string, value interface{}) opentracing.Span {
 	case float64:
 		s.SetMetric(key, t)
 	default:
-		s.setMeta(key, fmt.Sprint(value))
+		s.setMeta(key, value)
 	}
 
 	return s
@@ -217,4 +212,10 @@ type SpanContext struct {
 // ForeachBaggageItem hasn't been implemented
 func (ctx *SpanContext) ForeachBaggageItem(handler func(k, v string) bool) {
 	panic("not implemented")
+}
+
+type stringTagName string
+
+func (tag stringTagName) Set(span opentracing.Span, value string) {
+	span.SetTag(string(tag), value)
 }

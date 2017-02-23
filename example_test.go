@@ -6,14 +6,15 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentracing.Span {
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	span := tr.StartSpan("child",
 		opentracing.ChildOf(parent.Context()),
-		opentracing.Tag{ServiceTagKey, "gochild"},
 	)
+	ext.PeerService.Set(span, "go-child")
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	return span
 }
@@ -33,10 +34,8 @@ func ExampleTracer_StartSpan() {
 	span := NewTracer().StartSpan("span")
 
 	// Let set DataDog's specific attrs Service and Resource
-	span.LogKV(
-		ServiceTagKey, "gotest",
-		ResourceTagKey, "/user/{id}",
-	)
+	ext.PeerService.Set(span, "test-service")
+	ext.Component.Set(span, "/user/{id}")
 
 	// To Set metrics, we need to pass a float64 value type
 	span.LogKV("elapsed", 0.1234)
@@ -51,7 +50,7 @@ func ExampleTracer_StartSpan() {
 	fmt.Println("elapsed  =", ddspan.Metrics["elapsed"])
 	fmt.Println("query    =", ddspan.GetMeta("query"))
 	// Output:
-	// service  = gotest
+	// service  = test-service
 	// resource = /user/{id}
 	// elapsed  = 0.1234
 	// query    = SELECT data FROM dogs

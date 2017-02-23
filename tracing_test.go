@@ -15,6 +15,7 @@ import (
 
 	"github.com/DataDog/dd-trace-go/tracer"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,10 +108,11 @@ func TestSpanTags(t *testing.T) {
 
 func TestDDParams(t *testing.T) {
 	span := NewTracer().StartSpan("test",
-		opentracing.Tag{ServiceTagKey, "/bin/laden"},
-		opentracing.Tag{ResourceTagKey, "/user/{id}"},
 		opentracing.Tag{"user_agent", "firefox"},
 	).(*Span)
+
+	ext.PeerService.Set(span, "/bin/laden")
+	ext.Component.Set(span, "/user/{id}")
 
 	assert.Equal(t, "/bin/laden", span.Service)
 	assert.Equal(t, "/user/{id}", span.Resource)
