@@ -7,21 +7,20 @@ import (
 
 	dd "github.com/gchaincl/dd-go-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
-	otext "github.com/opentracing/opentracing-go/ext"
+	ext "github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 )
 
 func spanChild(tr opentracing.Tracer, parent opentracing.Span, service, op string) opentracing.Span {
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	span := tr.StartSpan(op, opentracing.ChildOf(parent.Context()))
-	otext.PeerService.Set(span, service)
+	ext.PeerService.Set(span, service)
 	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	return span
 }
 
 func main() {
 	tr := dd.NewTracer()
-	tr.(*dd.Tracer).DebugLoggingEnabled = true
 
 	for {
 		// Start the parent Span
@@ -30,8 +29,8 @@ func main() {
 			opentracing.Tag{"ping", 0.546},
 		)
 		// Set Service name and Resource
-		otext.PeerService.Set(parent, "pylons")
-		otext.Component.Set(parent, "/users/{id}")
+		ext.PeerService.Set(parent, "pylons")
+		ext.Component.Set(parent, "/users/{id}")
 
 		// Set env
 		dd.EnvTag.Set(parent, "test")
