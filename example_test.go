@@ -2,22 +2,9 @@ package ddtracer
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
-
-func spanChild(tr opentracing.Tracer, parent opentracing.Span, op string) opentracing.Span {
-	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-	span := tr.StartSpan("child",
-		opentracing.ChildOf(parent.Context()),
-	)
-	ext.PeerService.Set(span, "go-child")
-	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-	return span
-}
 
 func ExampleNewTracer() {
 	t := NewTracer()

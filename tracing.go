@@ -1,5 +1,3 @@
-// Package ddtracer is a DataDog's tracer (https://github.com/DataDog/dd-trace-go) wrapper for the OpenTracing API.
-// As this is an OpenAPI wrapper, please refer to the official documentation.
 package ddtracer
 
 import (
