@@ -80,7 +80,7 @@ func (t *Tracer) startSpanWithOptions(op string, opts *opentracing.StartSpanOpti
 		span = t.NewRootSpan(op, DefaultService, DefaultResource)
 	}
 
-	s := &Span{span}
+	s := &Span{span, t}
 	for key, value := range opts.Tags {
 		s.SetTag(key, value)
 	}
@@ -118,6 +118,7 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (opentracing.S
 
 type Span struct {
 	*tracer.Span
+	tracer *Tracer
 }
 
 func (s *Span) Finish() {
@@ -208,7 +209,7 @@ func (s *Span) BaggageItem(restrictedKey string) string {
 }
 
 func (s *Span) Tracer() opentracing.Tracer {
-	return s.Tracer()
+	return s.tracer
 }
 
 type SpanContext struct {

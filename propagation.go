@@ -66,11 +66,9 @@ func (p *textMapPropagator) Extract(carrier interface{}) (opentracing.SpanContex
 		return nil
 	})
 
-	span := Span{&tracer.Span{
-		SpanID:   spanID,
-		ParentID: parentID,
-		TraceID:  traceID,
-	}}
-
+	span := &Span{
+		tracer.NewSpan("", DefaultService, DefaultResource, spanID, traceID, parentID, p.t.Tracer),
+		p.t,
+	}
 	return span.Context(), err
 }
