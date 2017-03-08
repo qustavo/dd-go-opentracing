@@ -188,10 +188,12 @@ func (s *Span) LogKV(alternatingKeyValues ...interface{}) {
 
 func (s *Span) LogEvent(event string) {
 	stdlog.Println("Span.LogEvent() has been deprecated, use LogFields or LogKV")
+	s.LogKV(event, nil)
 }
 
 func (s *Span) LogEventWithPayload(event string, payload interface{}) {
-	stdlog.Println("Span.LogWithPayload() has been deprecated, use LogFields or LogKV")
+	stdlog.Println("Span.LogEventWithPayload() has been deprecated, use LogFields or LogKV")
+	s.LogKV(event, payload)
 }
 
 func (s *Span) Log(data opentracing.LogData) {
