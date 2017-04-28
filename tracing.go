@@ -116,6 +116,12 @@ func (t *Tracer) Extract(format interface{}, carrier interface{}) (opentracing.S
 	return nil, opentracing.ErrUnsupportedFormat
 }
 
+func (t *Tracer) Close() error {
+	t.Stop()
+	t.Tracer.Stop()
+	return nil
+}
+
 type Span struct {
 	*tracer.Span
 	tracer *Tracer
