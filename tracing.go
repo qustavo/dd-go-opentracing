@@ -72,6 +72,19 @@ func (t *Tracer) startSpanWithOptions(op string, opts *opentracing.StartSpanOpti
 		if ref.Type == opentracing.ChildOfRef {
 			if p, ok := ref.ReferencedContext.(*SpanContext); ok {
 				span = tracer.NewChildSpanFromContext(op, p.ctx)
+
+				// If this is true we're making a DD opentracing span from
+				// a standard open tracing span
+				if span.TraceID == 0 {
+					span.TraceID = span.SpanID // at the very least set the trace ID, with no other changes this becomes a root span
+					pSpan := tracer.SpanFromContextDefault(p.ctx)
+					if pSpan.TraceID == 0 { // if the parent span doesn't have a trace ID set it
+						pSpan.TraceID = pSpan.SpanID
+					}
+					if span.ParentID == pSpan.SpanID { // if this is infact our parent inherit its trace id
+						span.TraceID = pSpan.TraceID
+					}
+				}
 			}
 		}
 	}
