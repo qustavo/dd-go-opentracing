@@ -221,12 +221,14 @@ func (s *Span) Log(data opentracing.LogData) {
 
 // SetBaggageItem  hasn't been implemented
 func (s *Span) SetBaggageItem(restrictedKey string, value string) opentracing.Span {
-	panic("not implemented")
+	stdlog.Println("WARNING - SetBaggageItem not implemented")
+	return s
 }
 
 // BaggageItem hasn't been implemented
 func (s *Span) BaggageItem(restrictedKey string) string {
-	panic("not implemented")
+	stdlog.Println("WARNING - BaggageItem not implemented")
+	return ""
 }
 
 func (s *Span) Tracer() opentracing.Tracer {
@@ -239,7 +241,7 @@ type SpanContext struct {
 
 // ForeachBaggageItem hasn't been implemented
 func (ctx *SpanContext) ForeachBaggageItem(handler func(k, v string) bool) {
-	panic("not implemented")
+	stdlog.Println("WARNING - ForeachBaggageItem not implemented")
 }
 
 type stringTagName string
