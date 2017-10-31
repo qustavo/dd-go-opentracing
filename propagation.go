@@ -21,6 +21,7 @@ type textMapPropagator struct {
 	t *Tracer
 }
 
+// Inject takes a span and a supplied carrier and injects the span into the carrier
 func (p *textMapPropagator) Inject(span *tracer.Span, carrier interface{}) error {
 	tm, ok := carrier.(opentracing.TextMapWriter)
 	if !ok {
@@ -36,6 +37,7 @@ func (p *textMapPropagator) Inject(span *tracer.Span, carrier interface{}) error
 	return nil
 }
 
+// Extract a full span object from a supplied carrier if one exists
 func (p *textMapPropagator) Extract(carrier interface{}) (opentracing.SpanContext, error) {
 	tm, ok := carrier.(opentracing.TextMapReader)
 	if !ok {
