@@ -25,8 +25,8 @@ func main() {
 	for {
 		// Start the parent Span
 		parent := tr.StartSpan("pylons.request",
-			opentracing.Tag{"foo", "bar"},
-			opentracing.Tag{"ping", 0.546},
+			opentracing.Tag{Key: "foo", Value: "bar"},
+			opentracing.Tag{Key: "ping", Value: 0.546},
 		)
 		// Set Service name and Resource
 		ext.PeerService.Set(parent, "pylons")

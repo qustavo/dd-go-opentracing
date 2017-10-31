@@ -15,10 +15,12 @@ type Configuration struct {
 	Enabled             bool    // Enable or Disable the tracer (default: false)
 }
 
+// NewTracer initializes the tracer object with a nil transport
 func (c *Configuration) NewTracer() (opentracing.Tracer, io.Closer) {
 	return c.NewTracerTransport(nil)
 }
 
+// NewTracerTransport initializes a new tracer with a supplied custom transport
 func (c *Configuration) NewTracerTransport(transport tracer.Transport) (opentracing.Tracer, io.Closer) {
 	var driver *tracer.Tracer
 	if transport == nil {
